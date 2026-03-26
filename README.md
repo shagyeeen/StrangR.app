@@ -1,0 +1,1 @@
+# StrangR.app
