@@ -29,6 +29,11 @@ const io = new SocketIOServer(server, {
   }
 })
 
+// root route
+app.get('/', (req, res) => {
+  res.status(200).send('StrangR Backend is running')
+})
+
 // basic health check
 app.get('/health', (req, res) => {
   res.status(200).json({ status: 'ok', timestamp: new Date().toISOString() })

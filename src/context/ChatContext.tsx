@@ -49,6 +49,29 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
     stateRef.current = chatState
   }, [chatState])
 
+  // Heartbeat to keep backend alive on Render (every 10 minutes)
+  useEffect(() => {
+    const pingBackend = async () => {
+      try {
+        const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:3001/api'
+        // Get the health endpoint by replacing /api with /health
+        const healthUrl = baseUrl.replace('/api', '/health')
+        await fetch(healthUrl, { mode: 'no-cors' }) // node-cors because it is a simple ping
+        console.log('[Heartbeat] Backend pinged successfully')
+      } catch (error) {
+        console.log('[Heartbeat] Ping failed (expected if backend is sleeping or URL is different)')
+      }
+    }
+
+    // Initial ping
+    pingBackend()
+
+    // Ping every 10 minutes (600,000 ms)
+    const interval = setInterval(pingBackend, 10 * 60 * 1000)
+
+    return () => clearInterval(interval)
+  }, [])
+
   useEffect(() => {
     if (isAuthenticated && token) {
       const s = connectSocket(token)
