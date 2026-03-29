@@ -16,7 +16,7 @@ export const apiFetch = async (endpoint: string, options: RequestInit = {}) => {
   const headers = {
     ...await getHeaders(),
     ...(options.headers || {})
-  }
+  } as HeadersInit
 
   const response = await fetch(`${API_BASE}${endpoint}`, {
     ...options,
