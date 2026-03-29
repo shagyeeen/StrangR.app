@@ -13,10 +13,9 @@ interface ChatWindowProps {
 }
 
 export function ChatWindow({ onStartMatch }: ChatWindowProps) {
-  const { chatState, sendConnectionRequest, declineConnection, resetChat, skipStranger, reportStranger } = useChatContext()
+  const { chatState, sendConnectionRequest, declineConnection, hideConnectionProposal, resetChat, skipStranger, reportStranger } = useChatContext()
   const { currentMatch, connectionStatus, connectionId } = chatState
   const [showFriendModal, setShowFriendModal] = useState(false)
-  const [reportMode, setReportMode] = useState(false)
 
   const handleConnect = () => {
     sendConnectionRequest()
@@ -38,7 +37,24 @@ export function ChatWindow({ onStartMatch }: ChatWindowProps) {
   const isFriends = connectionStatus === 'friends'
 
   return (
-    <div className="flex flex-col h-full">
+    <div 
+      className="flex flex-col h-full relative overflow-hidden"
+      style={{ 
+        backgroundImage: currentMatch ? 'url("/images/chat_wallpaper.png")' : 'none',
+        backgroundSize: '400px',
+        backgroundRepeat: 'repeat',
+        backgroundColor: '#0a0a0a'
+      }}
+    >
+      {/* Background Dimmer */}
+      <div className="absolute inset-0 bg-black/60 pointer-events-none z-0" />
+
+      {/* Animated Background Atmosphere (Only when not in chat) */}
+      {!currentMatch && (
+        <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-0 overflow-hidden">
+          <div className="w-[500px] h-[500px] bg-[#f6b7f6]/10 rounded-full blur-[120px] animate-pulse" />
+        </div>
+      )}
       {/* Header */}
       {currentMatch && (
         <StrangerHeader
@@ -64,13 +80,20 @@ export function ChatWindow({ onStartMatch }: ChatWindowProps) {
       )}
 
       {/* Input */}
-      <MessageInput />
+      {currentMatch && <MessageInput />}
 
       {/* Modals */}
-      {connectionStatus === 'pending_connection' && currentMatch && (
+      {(connectionStatus === 'pending_connection' || connectionStatus === 'proposing_connection') && currentMatch && (
         <ConnectionPendingModal
           strangerCode={currentMatch.strangRCode}
-          onCancel={() => connectionId && declineConnection(connectionId)}
+          onClose={hideConnectionProposal}
+          onCancel={() => {
+            if (connectionId) {
+              declineConnection(connectionId)
+            } else {
+              resetChat() // Fallback for local cancel
+            }
+          }}
         />
       )}
 

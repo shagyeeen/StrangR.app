@@ -1,11 +1,11 @@
 'use client'
 
-import { useEffect } from 'react'
-import { useRouter } from 'next/navigation'
-import { useAuthContext } from '@/context/AuthContext'
 import { ChatProvider } from '@/context/ChatContext'
+import { useAuthContext } from '@/context/AuthContext'
+import { useRouter } from 'next/navigation'
+import { useEffect } from 'react'
 
-export default function DashboardLayout({ children }: { children: React.ReactNode }) {
+export default function ChatLayout({ children }: { children: React.ReactNode }) {
   const { isAuthenticated, isLoading } = useAuthContext()
   const router = useRouter()
 
@@ -19,8 +19,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     return (
       <div className="min-h-screen bg-black flex items-center justify-center">
         <div className="flex flex-col items-center gap-3">
-          <div className="w-10 h-10 border-2 border-[#C54B8C] border-t-transparent rounded-full animate-spin" />
-          <span className="text-[#555] text-xs uppercase tracking-widest">Loading...</span>
+          <div className="w-10 h-10 border-2 border-[#f6b7f6] border-t-transparent rounded-full animate-spin" />
+          <span className="text-[#555] text-xs uppercase tracking-widest">Entering Secure Line...</span>
         </div>
       </div>
     )
@@ -28,9 +28,5 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
   if (!isAuthenticated) return null
 
-  return (
-    <div className="h-screen bg-black flex flex-col overflow-hidden">
-      {children}
-    </div>
-  )
+  return children
 }

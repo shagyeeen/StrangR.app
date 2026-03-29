@@ -1,6 +1,7 @@
 'use client'
 
 import Link from 'next/link'
+import { clsx } from 'clsx'
 import { Link2 } from 'lucide-react'
 import { SHYNE } from '@/config/constants'
 
@@ -11,51 +12,42 @@ const FOOTER_LINKS = [
   { label: 'Instagram', href: 'https://instagram.com' },
 ]
 
-export function Footer() {
+interface FooterProps {
+  isDashboard?: boolean
+}
+
+export function Footer({ isDashboard = false }: FooterProps) {
   return (
-    <footer className="border-t border-[#1a1a1a] py-8 px-6">
-      <div className="max-w-screen-2xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
+    <footer className={clsx(
+      "w-full z-50 bg-[#0e0e0e]/80 backdrop-blur-xl border-t border-white/5 h-20 flex items-center",
+      isDashboard ? "fixed bottom-0" : "relative mt-auto py-12"
+    )}>
+      <div className="max-w-[1850px] w-full mx-auto px-6 md:px-10 flex flex-col md:flex-row items-center justify-between gap-6">
         
-        <div className="flex flex-col items-start gap-1">
-          <Link href="/" className="flex items-center gap-2 group">
-            <div className="w-8 h-8 flex items-center justify-center">
-              <img 
-                src="/images/logo.png" 
-                alt="StrangR Logo" 
-                className="w-full h-full object-contain group-hover:scale-110 transition-transform duration-300" 
-              />
-            </div>
-            <span className="font-bold text-white tracking-wider text-sm uppercase">STRANG<span className="text-[#f6b7f6]">R</span></span>
-          </Link>
-          <span className="text-[10px] text-[#555555] uppercase tracking-widest">Built by Shyne</span>
+        <div className="flex flex-col items-center md:items-start leading-tight">
+          <div className="flex items-center gap-2">
+            <img src="/images/logo.png" alt="" className="w-4 h-4 object-contain" />
+            <span className="font-bold text-white tracking-widest text-[10px] uppercase">STRANG<span className="text-[#f6b7f6]">R</span></span>
+          </div>
+          <span className="text-[9px] text-[#444] uppercase tracking-widest mt-0.5 whitespace-nowrap">BUILT BY SHYNE</span>
         </div>
 
-        {/* Links */}
-        <nav className="flex items-center gap-6">
+        <nav className="flex items-center gap-6 md:gap-8">
           {FOOTER_LINKS.map(link => (
             <Link
               key={link.label}
               href={link.href}
-              className="text-[11px] text-[#555555] hover:text-[#888888] uppercase tracking-widest transition-colors"
+              className="text-[9px] text-[#444] hover:text-[#f6b7f6] uppercase tracking-[0.2em] transition-colors"
             >
               {link.label}
             </Link>
           ))}
         </nav>
 
-        {/* Right */}
-        <div className="flex items-center gap-2">
-          <div className="online-dot" />
-          <span className="text-xs text-[#555555]">System Status: Optimal</span>
+        <div className="flex items-center gap-3 bg-white/5 px-4 py-2 rounded-2xl border border-white/5">
+          <div className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse shadow-[0_0_8px_rgba(34,197,94,0.5)]" />
+          <span className="text-[9px] text-[#666] uppercase tracking-widest font-bold">System Status: Optimal</span>
         </div>
-      </div>
-      
-      {/* Shyne credit */}
-      <div className="max-w-screen-2xl mx-auto mt-6 pt-6 border-t border-[#111111] flex items-center justify-between">
-        <span className="text-[10px] text-[#333333]">© 2024 StrangR. The Ethereal Dialogue.</span>
-        <Link href={SHYNE.portfolio} target="_blank" className="text-[10px] text-[#333333] hover:text-[#f6b7f6] transition-colors uppercase tracking-widest">
-          Built by Shyne © 2024
-        </Link>
       </div>
     </footer>
   )

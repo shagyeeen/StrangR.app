@@ -1,6 +1,6 @@
 'use client'
 
-import { Crown, MessageSquare, Star, Zap, Shield, User, Camera, Heart, Link2 } from 'lucide-react'
+import { Crown, MessageSquare, Star, Zap, Shield, Heart, Link2 } from 'lucide-react'
 import { useAuthContext } from '@/context/AuthContext'
 import { Header } from '@/components/Navigation/Header'
 import { Footer } from '@/components/Navigation/Footer'
@@ -17,50 +17,34 @@ export default function ProfilePage() {
         <div className="max-w-screen-2xl mx-auto">
           <div className="space-y-12">
             {/* Profile Header */}
-            <div className="relative p-8 rounded-3xl overflow-hidden border border-white/5 bg-[#080808]">
+            <div className="relative p-12 md:p-20 rounded-3xl overflow-hidden border border-white/5 bg-[#080808] flex items-center justify-center text-center">
               <div className="absolute top-0 right-0 w-[400px] h-[400px] bg-[#f6b7f6]/5 blur-[120px] -mr-32 -mt-32" />
+              <div className="absolute bottom-0 left-0 w-[300px] h-[300px] bg-[#f6b7f6]/5 blur-[100px] -ml-20 -mb-20" />
               
-              <div className="relative z-10 flex flex-col md:flex-row items-center gap-12">
-                <div className="relative group">
-                  <div className="w-40 h-40 rounded-[48px] overflow-hidden border-2 border-white/5 bg-[#111] flex items-center justify-center p-6">
-                     <img src="/images/logo.png" alt="Profile" className="w-full h-full object-contain opacity-20" />
-                     <User className="absolute inset-0 w-16 h-16 text-white m-auto opacity-40 group-hover:opacity-100 transition-opacity" strokeWidth={1.5} />
-                  </div>
-                  <button className="absolute bottom-2 right-2 w-10 h-10 rounded-2xl bg-[#f6b7f6] text-[#3c0d42] flex items-center justify-center shadow-xl hover:scale-110 active:scale-95 transition-all">
-                    <Camera size={18} />
-                  </button>
+              <div className="relative z-10 flex flex-col items-center gap-6">
+                <div className="px-6 py-2 rounded-full bg-white/5 border border-white/10 text-white/40 text-[10px] font-black tracking-[0.3em] uppercase">
+                  StrangR Identity
                 </div>
+                
+                <h1 className="text-5xl md:text-7xl font-black text-transparent bg-clip-text bg-gradient-to-br from-white via-white/90 to-white/40 tracking-tighter">
+                  {user?.strangRCode || 'SR-0000-X'}
+                </h1>
 
-                <div className="text-center md:text-left space-y-4">
-                  <div className="flex flex-wrap items-center justify-center md:justify-start gap-4">
-                    <h1 className="text-4xl font-black text-white tracking-tighter leading-none">
-                      {user?.displayName || 'Unknown Stranger'}
-                    </h1>
-                    {isPremium ? (
-                      <div className="px-4 py-1.5 rounded-full bg-[#f6b7f6]/10 border border-[#f6b7f6]/20 text-[#f6b7f6] text-[10px] font-black tracking-widest uppercase flex items-center gap-2">
-                        <Crown size={12} fill="currentColor" />
-                        PREMIUM
-                      </div>
-                    ) : (
-                      <div className="px-4 py-1.5 rounded-full bg-white/5 border border-white/10 text-[#555] text-[10px] font-black tracking-widest uppercase">
-                        STANDARD
-                      </div>
-                    )}
-                  </div>
-                  
-                  <div className="flex flex-wrap items-center justify-center md:justify-start gap-6">
-                    <div className="text-[#f6b7f6] font-mono text-lg font-bold">
-                       {user?.strangRCode || 'SR-0000-X'}
+                <div className="flex items-center gap-4">
+                  {isPremium ? (
+                    <div className="px-4 py-1.5 rounded-full bg-[#f6b7f6]/10 border border-[#f6b7f6]/20 text-[#f6b7f6] text-[10px] font-black tracking-widest uppercase flex items-center gap-2 shadow-[0_0_15px_rgba(246,183,246,0.1)]">
+                      <Crown size={12} fill="currentColor" />
+                      PREMIUM
                     </div>
-                    <div className="h-4 w-px bg-white/10 mt-1 hidden sm:block" />
-                    <div className="text-[#555] font-bold text-sm tracking-widest uppercase mt-1">
-                      Joined: {user?.accountCreatedDate ? new Date(user.accountCreatedDate).toLocaleDateString() : 'Mar 2026'}
+                  ) : (
+                    <div className="px-4 py-1.5 rounded-full bg-white/5 border border-white/10 text-[#555] text-[10px] font-black tracking-widest uppercase">
+                      STANDARD
                     </div>
+                  )}
+                  <div className="w-1.5 h-1.5 rounded-full bg-white/10" />
+                  <div className="text-[#555] font-bold text-[10px] tracking-widest uppercase">
+                    Joined: {user?.accountCreatedDate ? new Date(user.accountCreatedDate).toLocaleDateString() : 'Mar 2026'}
                   </div>
-
-                  <p className="text-[#666] font-medium max-w-xl text-lg leading-relaxed">
-                    Always connected, never truly known. Wandering the frequencies of StrangR in search of meaningful silence.
-                  </p>
                 </div>
               </div>
             </div>
@@ -102,38 +86,6 @@ export default function ProfilePage() {
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-12">
               {/* Detailed Settings/Bio */}
               <div className="lg:col-span-8 space-y-8">
-                <div className="p-10 rounded-[40px] bg-[#080808] border border-white/5 space-y-8">
-                  <h3 className="text-xl font-black text-white tracking-tight flex items-center gap-3">
-                    <span className="text-[#f6b7f6]">#</span> Identity Details
-                  </h3>
-                  
-                  <div className="space-y-6">
-                    <div className="space-y-2">
-                       <label className="text-[10px] font-black text-[#444] uppercase tracking-[0.2em] px-1">Display Name</label>
-                       <input 
-                         type="text" 
-                         className="w-full h-16 rounded-3xl bg-black border border-white/5 px-8 text-white font-bold focus:border-[#f6b7f6]/50 focus:ring-1 focus:ring-[#f6b7f6]/50 transition-all outline-none" 
-                         defaultValue={user?.displayName}
-                       />
-                    </div>
-                    
-                    <div className="space-y-2">
-                       <label className="text-[10px] font-black text-[#444] uppercase tracking-[0.2em] px-1">About Me</label>
-                       <textarea 
-                         rows={4}
-                         className="w-full rounded-3xl bg-black border border-white/5 p-8 text-white font-medium focus:border-[#f6b7f6]/50 transition-all outline-none resize-none leading-relaxed" 
-                         defaultValue="Always connected, never truly known. Wandering the frequencies of StrangR in search of meaningful silence."
-                       />
-                    </div>
-
-                    <div className="pt-4">
-                      <button className="h-16 px-12 rounded-[24px] bg-white text-black font-black text-sm tracking-tight hover:bg-[#f6b7f6] hover:text-[#3c0d42] transition-colors shadow-2xl shadow-black">
-                        SAVE CHANGES
-                      </button>
-                    </div>
-                  </div>
-                </div>
-
                 <div className="p-10 rounded-[40px] bg-[#080808] border border-white/5 space-y-8">
                   <h3 className="text-xl font-black text-white tracking-tight flex items-center gap-3">
                     <span className="text-[#f6b7f6]">#</span> Privacy Sync

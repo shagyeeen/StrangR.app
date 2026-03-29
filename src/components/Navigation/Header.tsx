@@ -18,9 +18,8 @@ export function Header() {
   ]
 
   return (
-    <header className="fixed top-0 left-0 right-0 z-50 border-b border-[#1a1a1a]" 
-            style={{ background: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(20px)' }}>
-      <div className="max-w-screen-2xl mx-auto px-10 h-20 flex items-center justify-between">
+    <header className="fixed top-0 w-full z-50 bg-black border-b border-white/5">
+      <div className="max-w-[1850px] mx-auto px-6 md:px-10 h-20 flex items-center justify-between">
         
         <div className="flex items-center gap-6">
           {!isDashboard && (

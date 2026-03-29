@@ -27,8 +27,10 @@ export interface Message {
   id: string
   senderId: string
   text: string
-  timestamp: Date
-  readBy: string[]
+  timestamp: Date | string
+  readBy?: string[]
+  status?: 'sending' | 'sent' | 'delivered' | 'read'
+  clientMsgId?: string
 }
 
 export interface Friend {
@@ -37,9 +39,11 @@ export interface Friend {
   petName: string
   phoneNumber?: string
   isOnline: boolean
+  lastSeen?: Date | string
   lastMessage?: string
   lastMessageTime?: Date
   friendshipId: string
+  unreadCount?: number
 }
 
 export interface Friendship {
@@ -119,15 +123,18 @@ export interface Stranger {
   uid: string
   strangRCode: string
   isOnline: boolean
+  lastSeen?: Date | string
 }
 
 export interface ChatState {
   currentMatch: Stranger | null
   messages: Message[]
   isTyping: boolean
-  connectionStatus: 'idle' | 'matching' | 'chatting' | 'pending_connection' | 'friends'
+  connectionStatus: 'idle' | 'matching' | 'chatting' | 'proposing_connection' | 'pending_connection' | 'friends' | 'disconnected'
   connectionId: string | null
   friendshipId: string | null
+  hasSentRequest: boolean
+  hasReceivedRequest: boolean
 }
 
 export interface AuthState {

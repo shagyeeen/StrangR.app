@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, Suspense } from 'react'
 import Link from 'next/link'
 import { LayoutDashboard, Users, MessageSquare, Settings, Flame, Zap, Shield, Sparkles } from 'lucide-react'
 import { Header } from '@/components/Navigation/Header'
@@ -8,37 +8,42 @@ import { Footer } from '@/components/Navigation/Footer'
 import { ChatWindow } from '@/components/Chat/ChatWindow'
 import { useChatContext } from '@/context/ChatContext'
 import { useAuthContext } from '@/context/AuthContext'
+import { useSearchParams } from 'next/navigation'
 
-export default function DashboardPage() {
-  const { chatState, startMatching, skipStranger } = useChatContext()
+function DashboardContent() {
+  const { chatState, startMatching, skipStranger, loadFriendChat, resetChat } = useChatContext()
   const { user, logout } = useAuthContext()
-  // const [activeTab, setActiveTab] = useState<'chat' | 'settings'>('chat') // activeTab is no longer used
+  const searchParams = useSearchParams()
+  const friendshipId = searchParams.get('friend')
 
-  const { connectionStatus, currentMatch } = chatState
-
-  // useEffect(() => {
-  //   if (connectionStatus === 'idle') {
-  //     startMatching()
-  //   }
-  // }, [connectionStatus, startMatching])
+  useEffect(() => {
+    if (friendshipId && chatState.friendshipId !== friendshipId) {
+      loadFriendChat(friendshipId)
+    }
+  }, [friendshipId, loadFriendChat, chatState.friendshipId, chatState.connectionStatus, resetChat])
 
   const handleStartChat = () => {
     startMatching()
   }
  
   return (
-    <div className="min-h-screen bg-[#0e0e0e] text-white font-sans selection:bg-[#f6b7f6]/20">
+    <div className="flex flex-col h-screen overflow-hidden bg-[#0e0e0e] text-white font-sans selection:bg-[#f6b7f6]/20">
       <Header />
-
-      <main className="pt-28 pb-32 max-w-screen-2xl mx-auto px-10">
-        <section className="space-y-12">
-          <div className="bg-[#0a0a0a] rounded-3xl overflow-hidden border border-white/5 shadow-2xl h-[calc(100vh-280px)] min-h-[600px] flex flex-col">
+      <main className="flex-1 w-full flex flex-col overflow-hidden pt-20">
+        <section className="w-full h-full">
+          <div className="bg-[#0a0a0a] overflow-hidden border-b border-white/5 shadow-2xl h-full flex flex-col relative">
             <ChatWindow onStartMatch={handleStartChat} />
           </div>
         </section>
       </main>
-
-      <Footer />
     </div>
+  )
+}
+
+export default function DashboardPage() {
+  return (
+    <Suspense fallback={<div className="h-screen bg-[#0e0e0e] flex items-center justify-center text-[#f6b7f6]">Loading...</div>}>
+      <DashboardContent />
+    </Suspense>
   )
 }

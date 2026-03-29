@@ -2,6 +2,7 @@ import type { Metadata } from "next"
 import { Inter } from "next/font/google"
 import "@/styles/globals.css"
 import { AuthProvider } from "@/context/AuthContext"
+import { ChatProvider } from "@/context/ChatContext"
 import { APP_META } from "@/config/constants"
 import { BanModal } from "@/components/Modals/BanModal"
 
@@ -21,8 +22,10 @@ export default function RootLayout({
     <html lang="en" className="dark scroll-smooth">
       <body className={`${inter.className} bg-black text-white antialiased`}>
         <AuthProvider>
-          {children}
-          <BanModal />
+          <ChatProvider>
+            {children}
+            <BanModal />
+          </ChatProvider>
         </AuthProvider>
       </body>
     </html>

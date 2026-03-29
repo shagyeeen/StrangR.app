@@ -11,21 +11,25 @@ export function MessageInput() {
   const { currentMatch, connectionStatus } = chatState
   const typingTimeout = useRef<NodeJS.Timeout | null>(null)
 
-  const isDisabled = !currentMatch || connectionStatus === 'idle' || connectionStatus === 'matching'
+  const isDisabled = !currentMatch || connectionStatus === 'idle' || connectionStatus === 'matching' || connectionStatus === 'disconnected'
 
   const handleTyping = (val: string) => {
     setText(val)
     if (!socket || !currentMatch) return
-    socket.emit('typing', { recipientId: currentMatch.uid })
+    socket.emit('typing', { recipientId: currentMatch.uid, friendshipId: chatState.friendshipId })
     if (typingTimeout.current) clearTimeout(typingTimeout.current)
     typingTimeout.current = setTimeout(() => {
-      socket.emit('stop_typing', { recipientId: currentMatch.uid })
+      socket.emit('stop_typing', { recipientId: currentMatch.uid, friendshipId: chatState.friendshipId })
     }, 1500)
   }
 
   const handleSend = async () => {
     const trimmed = text.trim()
-    if (!trimmed || isDisabled || isSending) return
+    console.log('--- INPUT: handleSend triggered ---', trimmed)
+    if (!trimmed || isDisabled || isSending) {
+      console.warn('INPUT: Aborting handleSend - early exit', { trimmed, isDisabled, isSending })
+      return
+    }
     setIsSending(true)
     setText('')
     try {
@@ -43,19 +47,23 @@ export function MessageInput() {
   }
 
   return (
-    <div className="px-6 py-5 bg-[#191919] border-t border-white/5">
-      <div className="flex items-center gap-4 bg-[#0A0A0A] rounded-2xl px-5 py-3 border border-white/5 shadow-inner transition-all duration-300 focus-within:border-[#f6b7f6]/30">
+    <div className="px-6 py-8 bg-transparent relative z-20">
+      <div className="input-container-premium">
         
-        {/* Simplified input without icons */}
-
         <input
           type="text"
           value={text}
           onChange={e => handleTyping(e.target.value)}
           onKeyDown={handleKeyDown}
-          placeholder={isDisabled ? 'Penetrating void...' : 'Whisper to stranger...'}
+          placeholder={
+            isDisabled 
+              ? connectionStatus === 'disconnected' ? 'Bond disconnected' : 'Penetrating void...' 
+              : connectionStatus === 'friends' 
+                ? `Message ${currentMatch?.strangRCode || 'friend'}...` 
+                : 'Whisper to stranger...'
+          }
           disabled={isDisabled}
-          className="flex-1 bg-transparent outline-none text-white placeholder-[#222] text-sm font-medium disabled:cursor-not-allowed selection:bg-[#f6b7f6]/30"
+          className="flex-1 bg-transparent outline-none text-white placeholder-[#333] text-sm font-medium disabled:cursor-not-allowed selection:bg-[#f6b7f6]/30 px-2"
         />
 
         <button

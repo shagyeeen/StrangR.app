@@ -5,41 +5,39 @@ import { X, Loader2 } from 'lucide-react'
 interface ConnectionPendingModalProps {
   strangerCode: string
   onCancel: () => void
+  onClose: () => void
 }
 
-export function ConnectionPendingModal({ strangerCode, onCancel }: ConnectionPendingModalProps) {
+export function ConnectionPendingModal({ strangerCode, onCancel, onClose }: ConnectionPendingModalProps) {
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4"
-         style={{ background: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(10px)' }}>
-      <div className="card max-w-sm w-full p-8 text-center relative"
-           style={{ background: '#0d0d0d' }}>
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-md">
+      <div className="bg-[#0a0a0a] border border-white/5 max-w-sm w-full p-8 rounded-[32px] text-center relative shadow-2xl">
         <button
-          onClick={onCancel}
-          className="absolute top-4 right-4 text-[#444] hover:text-white transition-colors"
+          onClick={onClose}
+          className="absolute top-6 right-6 text-[#333] hover:text-white transition-colors p-2"
         >
           <X className="w-5 h-5" />
         </button>
 
-        {/* Pulse circle */}
-        <div className="relative mx-auto w-20 h-20 mb-6">
-          <div className="absolute inset-0 rounded-full animate-ping opacity-20 bg-[#f6b7f6]" />
-          <div className="relative w-full h-full rounded-full flex items-center justify-center bg-[#191919] border border-white/5">
-            <Loader2 className="w-8 h-8 text-[#f6b7f6] animate-spin" />
+        {/* Loading Ring */}
+        <div className="relative mx-auto w-24 h-24 mb-8">
+          <div className="absolute inset-0 rounded-full border-2 border-[#f6b7f6]/10" />
+          <div className="absolute inset-0 rounded-full border-t-2 border-[#f6b7f6] animate-spin" />
+          <div className="absolute inset-0 flex items-center justify-center">
+            <div className="w-12 h-12 bg-[#f6b7f6]/5 rounded-full blur-xl animate-pulse" />
           </div>
         </div>
 
-        <h2 className="text-white font-bold text-xl mb-2 tracking-tight">Handshake Protocol</h2>
-        <p className="text-[#646464] text-[11px] uppercase font-bold tracking-[0.2em] mb-6">
-          Waiting for <span className="text-[#f6b7f6]">{strangerCode}</span> to bond...
+        <h2 className="text-white font-medium text-2xl mb-2 tracking-tight">Connection Request Proposed</h2>
+        <p className="text-[#666] text-sm mb-10">
+          Hoping for a connection...
         </p>
 
-        <div className="flex items-center gap-2 p-3 rounded-xl text-xs text-[#555]"
-             style={{ background: '#111', border: '1px solid #1a1a1a' }}>
-          ⚡ If they skip, this request will expire automatically.
-        </div>
-
-        <button onClick={onCancel} className="btn-ghost w-full mt-4 text-sm">
-          Cancel Request
+        <button 
+          onClick={onCancel} 
+          className="text-[#f6b7f6] text-sm font-medium hover:opacity-80 transition-opacity uppercase tracking-widest"
+        >
+          Cancel proposal
         </button>
       </div>
     </div>

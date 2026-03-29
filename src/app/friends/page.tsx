@@ -9,6 +9,7 @@ import {
 import { Header } from '@/components/Navigation/Header'
 import { Footer } from '@/components/Navigation/Footer'
 import { useAuthContext } from '@/context/AuthContext'
+import { useChatContext } from '@/context/ChatContext'
 import { useRouter } from 'next/navigation'
 // Custom lightweight time formatter to avoid external dependencies
 function formatRelativeTime(date: Date | string): string {
@@ -39,57 +40,88 @@ interface Friend {
   lastSeen?: string
   avatarInitials: string
   avatarGradient: string
+  unreadCount?: number
 }
 
-const MOCK_FRIENDS: Friend[] = [
-  {
-    friendshipId: '1',
-    uid: 'abc123',
-    strangRCode: 'SR-8812-A',
-    petName: 'Spicy Lemon',
-    phoneNumber: '+1 (555) 012-9934',
-    lastMessage: 'That jazz bar downtown has the best vibe...',
-    lastSeen: '2m ago',
-    avatarInitials: 'SL',
-    avatarGradient: 'from-pink-400 to-purple-600',
-  },
-  {
-    friendshipId: '2',
-    uid: 'def456',
-    strangRCode: 'SR-0045-K',
-    petName: 'Midnight Coffee',
-    phoneNumber: '+44 7700 900123',
-    lastMessage: 'Did you finish that book we talked about?',
-    lastSeen: '1h ago',
-    avatarInitials: 'MC',
-    avatarGradient: 'from-orange-400 to-red-600',
-  },
-  {
-    friendshipId: '3',
-    uid: 'ghi789',
-    strangRCode: 'SR-5521-M',
-    petName: 'Velvet Rain',
-    phoneNumber: '+81 90 1234 5678',
-    lastMessage: 'The city lights look amazing tonight.',
-    lastSeen: 'Yesterday',
-    avatarInitials: 'VR',
-    avatarGradient: 'from-blue-400 to-pink-500',
-  },
-]
+
 
 export default function FriendsPage() {
-  const { user, isAuthenticated, isLoading } = useAuthContext()
+  const { user, isAuthenticated, isLoading, token } = useAuthContext()
+  const { disconnectFriendship, socket } = useChatContext()
   const router = useRouter()
-  const [friends, setFriends] = useState<Friend[]>(MOCK_FRIENDS)
+  const [friends, setFriends] = useState<Friend[]>([])
   const [searchQuery, setSearchQuery] = useState('')
+  const [isFetching, setIsFetching] = useState(true)
 
   useEffect(() => {
     if (!isLoading && !isAuthenticated) router.push('/auth/login')
   }, [isAuthenticated, isLoading, router])
 
-  const handleRemoveFriend = (id: string) => {
+  useEffect(() => {
+    async function fetchFriends() {
+      if (!token) return
+      try {
+        const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/users/friends`, {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        })
+        if (res.ok) {
+          const data = await res.json()
+          setFriends(data)
+        }
+      } catch (err) {
+        console.error('Failed to fetch friends:', err)
+      } finally {
+        setIsFetching(false)
+      }
+    }
+
+    if (isAuthenticated && token) {
+      fetchFriends()
+    }
+  }, [isAuthenticated, token])
+
+  const [disconnectedNotice, setDisconnectedNotice] = useState<string | null>(null)
+
+  // Real-time bond disconnection listener
+  useEffect(() => {
+    if (!socket) return
+
+    const handleBondDisconnected = (data: { friendshipId: string }) => {
+      console.log('FriendsPage: Bond disconnected event received', data.friendshipId)
+      setFriends(prev => {
+        const friend = prev.find(f => f.friendshipId === data.friendshipId)
+        if (friend) {
+          setDisconnectedNotice(`Bond severed with ${friend.strangRCode || 'a friend'}.`)
+          setTimeout(() => setDisconnectedNotice(null), 5000)
+        }
+        return prev.filter(f => f.friendshipId !== data.friendshipId)
+      })
+    }
+
+    socket.on('bond_disconnected', handleBondDisconnected)
+    return () => {
+      socket.off('bond_disconnected', handleBondDisconnected)
+    }
+  }, [socket])
+
+  useEffect(() => {
+    if (!isLoading && !isAuthenticated) router.push('/auth/login')
+  }, [isAuthenticated, isLoading, router])
+
+  const handleOpenChat = (friendshipId: string) => {
+    router.push(`/chat/${friendshipId}`)
+  }
+
+  const handleRemoveFriend = async (id: string) => {
     if (confirm('Are you sure you want to disconnect?')) {
-      setFriends(prev => prev.filter(f => f.friendshipId !== id))
+      try {
+        disconnectFriendship(id)
+        setFriends(prev => prev.filter(f => f.friendshipId !== id))
+      } catch (err) {
+        console.error('Failed to remove friend:', err)
+      }
     }
   }
 
@@ -112,6 +144,12 @@ export default function FriendsPage() {
             <div>
               <h1 className="text-3xl font-bold text-white tracking-tighter">Your Circle</h1>
               <p className="text-[#555] mt-3 text-lg font-serif italic">Anonymous connections, tangible bonds.</p>
+              
+              {disconnectedNotice && (
+                <div className="mt-4 px-4 py-2 rounded-lg bg-red-500/10 border border-red-500/20 text-red-400 text-sm animate-in fade-in slide-in-from-top-2 duration-300">
+                  {disconnectedNotice}
+                </div>
+              )}
             </div>
             <div className="relative w-full md:w-96 group">
               <Search className="absolute left-5 top-1/2 -translate-y-1/2 text-[#333] group-focus-within:text-[#f6b7f6] transition-colors" size={18} />
@@ -127,51 +165,63 @@ export default function FriendsPage() {
 
           {/* Cards Grid */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-            {filteredFriends.map((friend) => (
-              <div key={friend.friendshipId} className="group relative bg-[#121212] rounded-3xl p-8 hover:bg-[#161616] transition-all duration-500 border border-white/5">
-                <div className="flex justify-between items-start mb-6">
-                  <div className="flex items-center gap-5">
-                    <div className={`w-16 h-16 rounded-full bg-gradient-to-tr ${friend.avatarGradient} flex items-center justify-center font-bold text-black text-2xl shadow-xl transform group-hover:scale-105 transition-transform`}>
-                      {friend.avatarInitials}
+            {isFetching ? (
+              // Loading skeletons
+              [1, 2].map((n) => (
+                <div key={n} className="bg-[#121212] rounded-3xl p-8 border border-white/5 animate-pulse h-64" />
+              ))
+            ) : filteredFriends.length > 0 ? (
+              filteredFriends.map((friend) => (
+                <div key={friend.friendshipId} className="group relative bg-[#121212] rounded-3xl p-8 hover:bg-[#161616] transition-all duration-500 border border-white/5">
+                  <div className="flex justify-between items-start mb-6">
+                    <div className="flex items-center gap-5">
+                      <div className={`w-16 h-16 rounded-full bg-gradient-to-tr ${friend.avatarGradient} flex items-center justify-center font-bold text-black text-2xl shadow-xl transform group-hover:scale-105 transition-transform relative`}>
+                        {friend.avatarInitials}
+                        {friend.unreadCount && friend.unreadCount > 0 && (
+                          <div className="absolute -top-1 -right-1 w-6 h-6 bg-[#f6b7f6] rounded-full border-2 border-[#121212] flex items-center justify-center text-[10px] text-[#3c0d42] font-black animate-bounce shadow-lg shadow-[#f6b7f6]/40">
+                            {friend.unreadCount}
+                          </div>
+                        )}
+                      </div>
+                      <div>
+                        <h3 className="font-bold text-xl text-white group-hover:text-[#f6b7f6] transition-colors">{friend.petName}</h3>
+                        <p className="text-[10px] font-mono text-[#444] uppercase tracking-widest">{friend.strangRCode}</p>
+                      </div>
                     </div>
-                    <div>
-                      <h3 className="font-bold text-xl text-white group-hover:text-[#f6b7f6] transition-colors">{friend.petName}</h3>
-                      <p className="text-[10px] font-mono text-[#444] uppercase tracking-widest">{friend.strangRCode}</p>
+                    <span className="text-[10px] font-bold uppercase tracking-[0.25em] text-[#333]">
+                      {friend.lastSeen 
+                        ? formatRelativeTime(friend.lastSeen)
+                        : 'Never'}
+                    </span>
+                  </div>
+
+                  <div className="space-y-4 mb-8">
+                    <div className="flex items-center gap-3 text-sm text-[#555]">
+                      <Phone size={16} />
+                      <span className="font-medium">{friend.phoneNumber}</span>
+                    </div>
+                    <div className="p-4 bg-[#0a0a0a] rounded-2xl border-l-[3px] border-[#f6b7f6]/20 italic">
+                      <p className="text-sm text-[#777] line-clamp-2 leading-relaxed">"{friend.lastMessage}"</p>
                     </div>
                   </div>
-                  <span className="text-[10px] font-bold uppercase tracking-[0.25em] text-[#333]">
-                    {friend.lastSeen 
-                      ? formatRelativeTime(friend.lastSeen)
-                      : 'Never'}
-                  </span>
-                </div>
 
-                <div className="space-y-4 mb-8">
-                  <div className="flex items-center gap-3 text-sm text-[#555]">
-                    <Phone size={16} />
-                    <span className="font-medium">{friend.phoneNumber}</span>
-                  </div>
-                  <div className="p-4 bg-[#0a0a0a] rounded-2xl border-l-[3px] border-[#f6b7f6]/20 italic">
-                    <p className="text-sm text-[#777] line-clamp-2 leading-relaxed">"{friend.lastMessage}"</p>
+                  <div className="flex items-center justify-between pt-6 border-t border-white/5">
+                    <button 
+                      onClick={() => handleOpenChat(friend.friendshipId)}
+                      className="text-[10px] font-bold uppercase tracking-widest text-[#f6b7f6] flex items-center gap-2 hover:translate-x-2 transition-transform"
+                    >
+                      Open Chat <ArrowRight size={14} />
+                    </button>
+                    <button 
+                      onClick={() => handleRemoveFriend(friend.friendshipId)}
+                      className="text-[10px] font-bold uppercase tracking-widest text-red-900/40 hover:text-red-500 transition-colors flex items-center gap-2"
+                    >
+                      <LogOut size={14} /> Disconnect
+                    </button>
                   </div>
                 </div>
-
-                <div className="flex items-center justify-between pt-6 border-t border-white/5">
-                  <button 
-                    onClick={() => router.push(`/dashboard?friend=${friend.friendshipId}`)}
-                    className="text-[10px] font-bold uppercase tracking-widest text-[#f6b7f6] flex items-center gap-2 hover:translate-x-2 transition-transform"
-                  >
-                    Open Chat <ArrowRight size={14} />
-                  </button>
-                  <button 
-                    onClick={() => handleRemoveFriend(friend.friendshipId)}
-                    className="text-[10px] font-bold uppercase tracking-widest text-red-900/40 hover:text-red-500 transition-colors flex items-center gap-2"
-                  >
-                    <LogOut size={14} /> Disconnect
-                  </button>
-                </div>
-              </div>
-            ))}
+              ))
+            ) : null}
 
             {/* Empty State / Add Action */}
             <Link 

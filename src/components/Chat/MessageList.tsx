@@ -4,7 +4,7 @@ import { useEffect, useRef } from 'react'
 import { Message } from '@/types'
 import { useChatContext } from '@/context/ChatContext'
 import { useAuthContext } from '@/context/AuthContext'
-import { Sparkles } from 'lucide-react'
+import { Sparkles, XCircle, Check, CheckCheck, Clock, Zap } from 'lucide-react'
 
 // Custom lightweight time formatters to avoid external dependencies
 function formatTime(date: Date | string): string {
@@ -43,10 +43,11 @@ interface MessageListProps {
   onSwipeLeft?: () => void  // skip
   onSwipeRight?: () => void // report
   onStartMatch?: () => void // start matching
+  isPrivate?: boolean
 }
 
 
-export function MessageList({ onSwipeLeft, onSwipeRight, onStartMatch }: MessageListProps) {
+export function MessageList({ onSwipeLeft, onSwipeRight, onStartMatch, isPrivate }: MessageListProps) {
   const { chatState } = useChatContext()
   const { user } = useAuthContext()
   const { messages, isTyping, currentMatch, connectionStatus } = chatState
@@ -56,25 +57,24 @@ export function MessageList({ onSwipeLeft, onSwipeRight, onStartMatch }: Message
   // Swipe gesture tracking
   const touchStartX = useRef<number>(0)
   const touchStartY = useRef<number>(0)
+  const isMouseDown = useRef<boolean>(false)
+  const { stopMatching } = useChatContext()
 
   useEffect(() => {
-    const list = listRef.current
-    if (!list) return
-
-    // Determine if we are already at or very near the bottom
-    // We use a threshold of 150px to be forgiving
-    const isAtBottom = list.scrollHeight - list.scrollTop <= list.clientHeight + 150
-    const lastMessage = messages[messages.length - 1]
-    const isMyMessage = lastMessage?.senderId === user?.uid || lastMessage?.senderId === 'me'
-
-    // Only auto-scroll if we're already at the bottom or if it's our own message
-    if (isAtBottom || isMyMessage) {
-      list.scrollTo({
-        top: list.scrollHeight,
-        behavior: 'smooth'
-      });
+    const scrollBottom = () => {
+      if (listRef.current) {
+        listRef.current.scrollTop = listRef.current.scrollHeight
+      }
+      bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
     }
-  }, [messages, isTyping, user?.uid])
+
+    // Scroll immediately
+    scrollBottom()
+    
+    // Also scroll after a tiny delay to account for rendering
+    const timer = setTimeout(scrollBottom, 100)
+    return () => clearTimeout(timer)
+  }, [messages, isTyping])
 
   const handleTouchStart = (e: React.TouchEvent) => {
     touchStartX.current = e.touches[0].clientX
@@ -84,52 +84,102 @@ export function MessageList({ onSwipeLeft, onSwipeRight, onStartMatch }: Message
   const handleTouchEnd = (e: React.TouchEvent) => {
     const dx = e.changedTouches[0].clientX - touchStartX.current
     const dy = e.changedTouches[0].clientY - touchStartY.current
-    if (Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > 80) {
+    if (Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > 50) { // Increased sensitivity to 50px
       if (dx < 0) onSwipeLeft?.()   // swipe left → skip
       else onSwipeRight?.()          // swipe right → report
     }
   }
 
-  // Matching / waiting state
-  if (connectionStatus === 'idle' || connectionStatus === 'matching') {
+  // Mouse drag support for desktop "swipe"
+  const handleMouseDown = (e: React.MouseEvent) => {
+    touchStartX.current = e.clientX
+    touchStartY.current = e.clientY
+    isMouseDown.current = true
+  }
+
+  const handleMouseUp = (e: React.MouseEvent) => {
+    if (!isMouseDown.current) return
+    isMouseDown.current = false
+    const dx = e.clientX - touchStartX.current
+    const dy = e.clientY - touchStartY.current
+    if (Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > 50) {
+      if (dx < 0) onSwipeLeft?.()
+      else onSwipeRight?.()
+    }
+  }
+
+  // Matching / waiting state (Skip if this is a private chat)
+  if (!isPrivate && (connectionStatus === 'idle' || connectionStatus === 'matching')) {
+    const isMatching = connectionStatus === 'matching'
     return (
-      <div className="flex-1 flex flex-col items-center justify-center gap-6 text-center px-12 relative z-10 overflow-hidden bg-[#0A0A0A]">
-        {/* Animated Background Atmosphere */}
-        <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-          <div className="w-[600px] h-[600px] bg-[#f6b7f6]/5 rounded-full blur-[120px] animate-pulse" />
+      <div className="flex-1 flex flex-col items-center justify-center gap-10 text-center px-12 relative z-10 overflow-hidden bg-transparent">
+        
+        {/* Atmospheric Glow Center */}
+        <div className="absolute inset-0 flex items-center justify-center pointer-events-none opacity-20">
+          <div className="w-[800px] h-[800px] bg-[#f6b7f6]/5 rounded-full blur-[120px] animate-pulse-slow" />
         </div>
- 
-        <div className="relative">
-          <div className="w-32 h-32 rounded-full flex items-center justify-center relative bg-white/5 backdrop-blur-3xl shadow-2xl border border-white/5">
-             <div className="absolute inset-0 rounded-full border-2 border-transparent border-t-[#f6b7f6]/40 border-r-[#f6b7f6]/40 animate-spin" />
-             <div className="w-16 h-16 rounded-full bg-[#191919] flex items-center justify-center shadow-inner">
-                <Sparkles size={32} className="text-[#f6b7f6] animate-pulse-slow" />
+
+        {/* Enhanced Orbital Scanner */}
+        <div className="relative group perspective-1000">
+          {/* Inner Core */}
+          <div className="w-32 h-32 rounded-full flex items-center justify-center relative bg-[#0a0a0a] backdrop-blur-3xl shadow-[0_0_50px_rgba(246,183,246,0.1)] border border-white/5 overflow-hidden">
+             {/* Spinning Rings */}
+             <div className="absolute inset-0 rounded-full border border-dashed border-[#f6b7f6]/20 animate-spin-slow" />
+             <div className="absolute inset-2 rounded-full border-t border-r border-[#f6b7f6]/40 animate-spin" />
+             <div className="absolute inset-4 rounded-full border-b border-l border-[#f6b7f6]/20 animate-reverse-spin" />
+             
+             {/* Glowing Pulse */}
+             <div className="w-16 h-16 rounded-full bg-gradient-to-tr from-[#f6b7f6]/10 to-transparent animate-pulse-slow" />
+             
+             <div className="absolute inset-0 flex items-center justify-center">
+                <Sparkles size={28} className={`text-[#f6b7f6] ${isMatching ? 'animate-pulse' : 'opacity-40'}`} />
              </div>
           </div>
+          
+          {/* Outer Ring Orbits */}
+          <div className={`absolute -inset-8 rounded-full border border-white/5 opacity-50 ${isMatching ? 'animate-ping opacity-10' : ''}`} />
         </div>
         
-        <div className="space-y-4 relative z-10 max-w-sm">
-          <div className="flex flex-col items-center gap-2">
-            <span className="text-[10px] font-bold uppercase tracking-[0.5em] text-[#f6b7f6] opacity-60">Neural Protocol V2.1</span>
-            <h3 className="text-white font-bold text-3xl tracking-tight leading-none uppercase">
-              {connectionStatus === 'matching' ? 'SEARCHING FOR STRANGR' : 'GO INCOGNITO'}
+        <div className="space-y-6 relative z-10 max-w-lg">
+          <div className="flex flex-col items-center gap-3">
+            <span className="text-[10px] font-black uppercase tracking-[0.8em] text-[#f6b7f6] italic font-serif">DISCOVER STRANGR</span>
+            <h3 className="text-white font-black text-5xl tracking-tighter leading-none uppercase italic">
+              {isMatching ? 'FINDING STRANGR' : 'START SEARCHING'}
             </h3>
           </div>
-          <p className="text-[#555] text-xs leading-relaxed font-medium">
-            {connectionStatus === 'matching' 
-              ? 'Locating 14,821 active nomads within your encrypted range. Standby for secure handshake.' 
-              : 'End-to-end encryption ensures every word remains between you and the void. No logs, no traces.'}
-          </p>
+          
+          <div className="relative inline-block">
+            <p className="text-[#666] text-[13px] leading-relaxed font-medium px-4 max-w-sm mx-auto">
+              {isMatching 
+                ? 'Navigating the unknown for your perfect match. Connection established through soul, not profile.' 
+                : 'Connect with a true StrangR through pure communication—beyond names, faces, and identities.'}
+            </p>
+            {/* Minimalist Accents */}
+            <div className="absolute -left-4 top-0 w-px h-full bg-[#f6b7f6]/10" />
+            <div className="absolute -right-4 top-0 w-px h-full bg-[#f6b7f6]/10" />
+          </div>
         </div>
  
         {connectionStatus === 'idle' && (
           <button 
             onClick={onStartMatch} 
-            className="group relative px-12 py-4 rounded-full bg-gradient-to-br from-[#f6b7f6] to-[#c88dc8] text-[#3c0d42] font-bold uppercase tracking-[0.2em] text-[10px] transition-all hover:scale-105 active:scale-95 shadow-2xl shadow-[#f6b7f6]/20 flex items-center gap-4 mt-4"
+            className="group relative px-12 py-5 rounded-full bg-black border border-[#f6b7f6]/20 text-[#f6b7f6] font-black uppercase tracking-[0.4em] text-[11px] transition-all hover:bg-[#f6b7f6] hover:text-[#3c0d42] hover:scale-105 active:scale-95 shadow-2xl hover:shadow-[#f6b7f6]/20 flex items-center gap-6 mt-4"
           >
-            SEARCH FOR STRANGR
-            <div className="w-6 h-6 rounded-full bg-black/10 flex items-center justify-center group-hover:translate-x-1 transition-transform">
-              →
+            START SEARCHING
+            <div className="w-6 h-6 rounded-full bg-[#f6b7f6]/10 flex items-center justify-center group-hover:bg-[#3c0d42]/10 transition-all">
+              <Zap size={14} className="group-hover:fill-[#3c0d42]" />
+            </div>
+          </button>
+        )}
+ 
+        {isMatching && (
+          <button 
+            onClick={stopMatching} 
+            className="group relative px-12 py-5 rounded-full bg-[#030303] border border-white/5 text-[#444] font-bold uppercase tracking-[0.4em] text-[10px] transition-all hover:text-red-500 hover:bg-red-500/5 active:scale-95 flex items-center gap-6 mt-4"
+          >
+            STOP SEARCHING
+            <div className="flex items-center justify-center group-hover:rotate-90 transition-transform">
+              <XCircle size={16} />
             </div>
           </button>
         )}
@@ -139,10 +189,34 @@ export function MessageList({ onSwipeLeft, onSwipeRight, onStartMatch }: Message
 
   if (!currentMatch) {
     return (
-      <div className="flex-1 flex flex-col items-center justify-center gap-4 text-center px-8 bg-[#0A0A0A]">
-        <div className="text-[#222] text-6xl font-serif">†</div>
-        <div className="text-white font-bold text-xl tracking-tight">Ready to connect?</div>
-        <p className="text-[#444] text-xs uppercase tracking-widest font-bold">Start matching to penetrate the void.</p>
+      <div className="flex-1 flex flex-col items-center justify-center gap-6 text-center px-12 bg-transparent relative">
+        <div className="absolute inset-0 flex items-center justify-center pointer-events-none opacity-[0.03]">
+          <Sparkles size={400} className="text-[#f6b7f6] blur-sm animate-pulse-slow" />
+        </div>
+        
+        <div className="flex flex-col items-center gap-4">
+          <div className="w-16 h-16 rounded-2xl bg-gradient-to-tr from-[#f6b7f6]/10 to-transparent border border-white/5 flex items-center justify-center shadow-2xl backdrop-blur-3xl animate-float mb-4">
+             <Sparkles size={28} className="text-[#f6b7f6]" />
+          </div>
+          
+          <span className="text-[10px] font-black uppercase tracking-[0.8em] text-[#f6b7f6]/60 italic font-serif">DISCOVER STRANGR</span>
+          <h3 className="text-white font-black text-4xl tracking-tighter leading-none uppercase italic max-w-sm">
+            Ready to connect?
+          </h3>
+          <p className="text-[#444] text-[13px] leading-relaxed font-medium px-4 max-w-xs mx-auto mt-2">
+            Connect with a true StrangR through pure communication—beyond names, faces, and identities.
+          </p>
+        </div>
+        
+        <button 
+          onClick={onStartMatch} 
+          className="group relative px-12 py-5 rounded-full bg-black border border-[#f6b7f6]/20 text-[#f6b7f6] font-black uppercase tracking-[0.4em] text-[11px] transition-all hover:bg-[#f6b7f6] hover:text-[#3c0d42] hover:scale-105 active:scale-95 shadow-2xl hover:shadow-[#f6b7f6]/20 flex items-center gap-6 mt-8"
+        >
+          START SEARCHING
+          <div className="w-6 h-6 rounded-full bg-[#f6b7f6]/10 flex items-center justify-center group-hover:bg-[#3c0d42]/10 transition-all">
+            <Zap size={14} className="group-hover:fill-[#3c0d42]" />
+          </div>
+        </button>
       </div>
     )
   }
@@ -150,24 +224,18 @@ export function MessageList({ onSwipeLeft, onSwipeRight, onStartMatch }: Message
   return (
     <div 
       ref={listRef}
-      className="flex-1 overflow-y-auto px-6 lg:px-12 py-10 space-y-8 relative"
-      style={{ 
-        backgroundImage: 'url("/images/chat-wallpaper.png")',
-        backgroundSize: '400px',
-        backgroundRepeat: 'repeat',
-        backgroundColor: '#0a0a0a'
-      }}
+      className="flex-1 overflow-y-auto px-6 lg:px-12 pt-4 pb-32 space-y-4 relative scroll-smooth"
       onTouchStart={handleTouchStart}
       onTouchEnd={handleTouchEnd}
+      onMouseDown={handleMouseDown}
+      onMouseUp={handleMouseUp}
     >
-      <div className="absolute inset-0 bg-[#0A0A0A]/60 pointer-events-none" />
-      
-      <div className="relative z-10 flex flex-col gap-8">
+      <div className="relative z-10 flex flex-col gap-6">
         {messages.length > 0 && (
           <div className="flex items-center gap-4 my-4">
             <div className="flex-1 h-px bg-white/5" />
             <span className="text-[9px] text-[#444] uppercase font-bold tracking-[0.3em]">
-              SESSION ACTIVE — {formatTime(messages[0]?.timestamp || new Date())}
+              {connectionStatus === 'friends' ? 'BONDED FRIENDSHIP — PERMANENT' : `SESSION ACTIVE — ${formatTime(messages[0]?.timestamp || new Date())}`}
             </span>
             <div className="flex-1 h-px bg-white/5" />
           </div>
@@ -176,11 +244,17 @@ export function MessageList({ onSwipeLeft, onSwipeRight, onStartMatch }: Message
         {messages.length === 0 && (
           <div className="text-center py-12 flex flex-col items-center gap-4">
             <div className="bg-[#f6b7f6]/10 border border-[#f6b7f6]/20 px-6 py-2 rounded-full mb-4">
-              <p className="text-[#f6b7f6] text-[10px] uppercase font-black tracking-[0.4em] animate-pulse">STRANGR FOUND</p>
+              <p className="text-[#f6b7f6] text-[10px] uppercase font-black tracking-[0.4em] animate-pulse">
+                {connectionStatus === 'friends' ? 'BONDED FRIEND' : 'STRANGR FOUND'}
+              </p>
             </div>
             <div className="w-px h-8 bg-gradient-to-b from-[#f6b7f6]/40 to-transparent" />
-            <p className="text-[#444] text-[10px] uppercase font-bold tracking-[0.2em]">Established initial handshake</p>
-            <p className="text-[#f6b7f6]/60 text-[10px] uppercase font-bold tracking-[0.3em]">Say anything to {currentMatch.strangRCode}</p>
+            <p className="text-[#444] text-[10px] uppercase font-bold tracking-[0.2em]">
+              {connectionStatus === 'friends' ? 'Safe and Secure' : 'Established initial handshake'}
+            </p>
+            <p className="text-[#f6b7f6]/60 text-[10px] uppercase font-bold tracking-[0.3em]">
+              Say anything to {currentMatch.strangRCode}
+            </p>
           </div>
         )}
 
@@ -201,7 +275,20 @@ export function MessageList({ onSwipeLeft, onSwipeRight, onStartMatch }: Message
               <div className={isMe ? 'bubble-self-premium' : 'bubble-stranger-editorial'}>
                 {msg.text}
               </div>
-              <div className="text-[9px] text-[#333] font-bold tracking-widest mt-0.5 font-mono">{formatTime(msg.timestamp)}</div>
+              <div className="flex items-center gap-1 mt-0.5">
+                <div className="text-[9px] text-[#333] font-bold tracking-widest font-mono">
+                  {formatTime(msg.timestamp)}
+                </div>
+                {isMe && (
+                  <div className="ml-2 flex items-center">
+                    {msg.status === 'sending' && <Clock size={11} className="text-white/30" />}
+                    {msg.status === 'sent' && <Check size={12} className="text-white/70" />}
+                    {msg.status === 'delivered' && <CheckCheck size={15} className="text-white shadow-[0_0_8px_rgba(255,255,255,0.2)]" />}
+                    {msg.status === 'read' && <CheckCheck size={15} className="text-[#f6b7f6] drop-shadow-[0_0_8px_rgba(246,183,246,0.5)]" />}
+                    {!msg.status && <Check size={12} className="text-white/70" />}
+                  </div>
+                )}
+              </div>
             </div>
           )
         })}

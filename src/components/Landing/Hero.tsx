@@ -31,7 +31,7 @@ export function Hero() {
   }, [])
 
   return (
-    <section className="relative min-h-screen flex items-center overflow-hidden pt-16">
+    <section className="relative h-[calc(100vh-80px)] min-h-[700px] flex items-center justify-center overflow-hidden">
       {/* Background atmosphere */}
       <div className="absolute inset-0 pointer-events-none">
         <div className="absolute top-1/4 left-1/4 w-[800px] h-[800px] rounded-full opacity-10 blur-[120px]"
@@ -40,7 +40,7 @@ export function Hero() {
              style={{ background: 'radial-gradient(circle, #c88dc8, transparent)' }} />
       </div>
 
-      <div className="max-w-7xl mx-auto px-6 py-24 grid grid-cols-1 lg:grid-cols-2 gap-20 items-center w-full relative z-10">
+      <div className="max-w-[1850px] mx-auto px-6 md:px-12 py-8 grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-20 items-center w-full relative z-10">
         {/* Left */}
         <div data-aos="fade-right">
           {/* Live badge */}
@@ -51,13 +51,13 @@ export function Hero() {
             </span>
           </div>
 
-          <h1 className="text-6xl md:text-8xl font-bold leading-[0.95] text-white mb-8 tracking-tighter">
+          <h1 className="text-4xl md:text-6xl lg:text-7xl font-bold leading-[0.9] text-white mb-4 tracking-tighter">
             Chat with<br />
             <span className="text-white">Strangers.</span><br />
             <span className="text-[#f6b7f6] italic font-serif">Friendships.</span>
           </h1>
 
-          <p className="text-[#555] text-xl leading-relaxed max-w-md mb-12 font-medium">
+          <p className="text-[#444] text-base md:text-lg leading-relaxed max-w-md mb-8 font-medium">
             Completely anonymous. Purely conversation-driven. Rediscover human connection in a digital sanctuary built for depth.
           </p>
 

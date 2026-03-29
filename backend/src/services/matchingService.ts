@@ -1,5 +1,6 @@
 import { Socket } from 'socket.io'
 import { db } from '../config/firebase'
+import { supabase } from '../config/supabase'
 
 interface QueueUser {
   uid: string
@@ -11,8 +12,11 @@ export class MatchingService {
   private queue: QueueUser[] = []
 
   addToQueue(uid: string, socket: Socket) {
-    // Avoid duplicates
-    if (this.queue.some(u => u.uid === uid)) return
+    // Avoid double-queuing EXACT same socket
+    if (this.queue.some(u => u.socket.id === socket.id)) return
+
+    // If same user joins from another tab, remove the old one first
+    this.queue = this.queue.filter(u => u.uid !== uid)
 
     this.queue.push({ uid, socket, joinedAt: Date.now() })
     console.log(`User ${uid} joined queue. Queue length: ${this.queue.length}`)
@@ -30,16 +34,48 @@ export class MatchingService {
   private async tryMatch() {
     if (this.queue.length < 2) return
 
-    // Simply take the first two members from the queue
+    // Simply take the first member from the queue
     const userA = this.queue.shift()!
-    let userB = this.queue.shift()!
-
-    // Prevent matching someone on each other's denial list (basic implementation)
-    // For MVP, we will assume simple matching, but we could re-insert B into queue and pop the next user if denied.
-
-    console.log(`Matched ${userA.uid} and ${userB.uid}`)
-
+    
     try {
+      // 1. Fetch current active friends - manual filter for maximum reliability/speed
+      const friendUids = new Set<string>()
+      
+      try {
+        const friendshipSnapshot = await db.collection('friendships')
+          .where('users', 'array-contains', userA.uid)
+          .get()
+        
+        friendshipSnapshot.docs.forEach(doc => {
+          const data = doc.data()
+          // ONLY skip if strictly active
+          if (data.status === 'active') {
+            const uids = data.users as string[]
+            uids.forEach(id => {
+              if (id !== userA.uid) friendUids.add(id)
+            })
+          }
+        })
+      } catch (err) {
+        console.warn('MatchingService: Firestore friend check failed', err)
+      }
+
+      console.log(`MatchingService: User ${userA.uid} matches ${friendUids.size} active friends to skip.`)
+
+      const matchIndex = this.queue.findIndex(u => u.uid !== userA.uid && !friendUids.has(u.uid))
+      
+      if (matchIndex === -1) {
+        // No valid partners yet. To avoid tight loops, we push to back instead of unshift
+        // This gives others a chance to join and provides a natural delay
+        this.queue.push(userA)
+        console.log(`MatchingService: No match for ${userA.uid}, moving to back of queue.`)
+        return
+      }
+
+      const userB = this.queue.splice(matchIndex, 1)[0]
+
+      console.log(`Matched ${userA.uid} and ${userB.uid}`)
+
       // Get base user data containing StrangR Codes
       const [docA, docB] = await Promise.all([
         db.collection('users').doc(userA.uid).get(),
@@ -65,16 +101,14 @@ export class MatchingService {
         isOnline: true
       })
 
+      // Attempt recursive matching if there are more people
+      if (this.queue.length >= 2) {
+        setImmediate(() => this.tryMatch())
+      }
     } catch (error) {
       console.error('Error during match retrieval:', error)
-      // re-queue
-      this.addToQueue(userA.uid, userA.socket)
-      this.addToQueue(userB.uid, userB.socket)
-    }
-
-    // Attempt recursive matching if there are more people
-    if (this.queue.length >= 2) {
-      this.tryMatch()
+      // re-queue User A at the back to try again later
+      this.queue.push(userA)
     }
   }
 }
