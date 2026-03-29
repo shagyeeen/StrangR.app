@@ -4,10 +4,15 @@ import crypto from 'crypto'
 import { db } from '../config/firebase'
 import { AuthRequest } from '../middleware/auth'
 
-const razorpay = new Razorpay({
-  key_id: process.env.RAZORPAY_KEY_ID || '',
-  key_secret: process.env.RAZORPAY_KEY_SECRET || ''
-})
+const getRazorpayInstance = () => {
+  if (!process.env.RAZORPAY_KEY_ID || !process.env.RAZORPAY_KEY_SECRET) {
+    throw new Error('Razorpay keys are missing in Environment Variables')
+  }
+  return new Razorpay({
+    key_id: process.env.RAZORPAY_KEY_ID,
+    key_secret: process.env.RAZORPAY_KEY_SECRET
+  })
+}
 
 export const createRazorpayOrder = async (req: AuthRequest, res: Response) => {
   try {
@@ -19,6 +24,7 @@ export const createRazorpayOrder = async (req: AuthRequest, res: Response) => {
       receipt: `receipt_${uid}_${Date.now()}`
     }
 
+    const razorpay = getRazorpayInstance()
     const order = await razorpay.orders.create(options)
     res.status(200).json({ orderId: order.id, amount: options.amount })
 
