@@ -22,6 +22,7 @@ interface ChatContextType {
   loadFriendChat: (friendshipId: string) => Promise<void>
   disconnectFriendship: (friendshipId: string) => void
   hideConnectionProposal: () => void
+  dismissNotifications: () => void
 }
 
 const defaultChatState: ChatState = {
@@ -289,8 +290,20 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
           ...prev,
           currentMatch: null,
           messages: [],
-          connectionStatus: 'matching',
+          connectionStatus: 'idle', // Stop matching temporarily to show popup
           isTyping: false,
+          partnerSkipNotification: true
+        }))
+      })
+
+      s.on(SOCKET_EVENTS.YOU_WERE_REPORTED, (data: { count: number, max: number }) => {
+        setChatState(prev => ({
+          ...prev,
+          currentMatch: null,
+          messages: [],
+          connectionStatus: 'idle', // Stop matching temporarily to show popup
+          isTyping: false,
+          partnerReportNotification: data
         }))
       })
 
@@ -349,6 +362,7 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
         s.off(SOCKET_EVENTS.USER_TYPING)
         s.off(SOCKET_EVENTS.USER_STOPPED_TYPING)
         s.off(SOCKET_EVENTS.MATCH_SKIPPED_YOU)
+        s.off(SOCKET_EVENTS.YOU_WERE_REPORTED)
         s.off(SOCKET_EVENTS.CONNECTION_REQUEST_RECEIVED)
         s.off(SOCKET_EVENTS.CONNECTION_ACCEPTED)
         s.off(SOCKET_EVENTS.CONNECTION_EXPIRED)
@@ -476,6 +490,14 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
     setChatState(prev => ({ ...prev, connectionStatus: 'chatting' }))
   }, [])
 
+  const dismissNotifications = useCallback(() => {
+    setChatState(prev => ({ 
+      ...prev, 
+      partnerSkipNotification: false, 
+      partnerReportNotification: undefined 
+    }))
+  }, [])
+
   const resetChat = useCallback(() => {
     setChatState(defaultChatState)
     roomRef.current = null
@@ -551,7 +573,7 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
       value={{ 
         chatState, socket, sendMessage, startMatching, stopMatching, skipStranger, 
         reportStranger, sendConnectionRequest, acceptConnection, declineConnection, resetChat,
-        loadFriendChat, disconnectFriendship, hideConnectionProposal
+        loadFriendChat, disconnectFriendship, hideConnectionProposal, dismissNotifications
       }}
     >
       {children}

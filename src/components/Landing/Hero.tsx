@@ -43,13 +43,6 @@ export function Hero() {
       <div className="max-w-[1850px] mx-auto px-6 md:px-12 py-8 grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-20 items-center w-full relative z-10">
         {/* Left */}
         <div data-aos="fade-right">
-          {/* Live badge */}
-          <div className="inline-flex items-center gap-3 px-4 py-2 rounded-full border border-white/5 bg-white/5 backdrop-blur-md mb-10 shadow-xl">
-            <div className="online-dot shadow-[0_0_10px_#10B981]" />
-            <span className="text-[10px] text-[#555] font-bold tracking-[0.3em] uppercase">
-              {onlineCount.toLocaleString()} NOMADS ACTIVE
-            </span>
-          </div>
 
           <h1 className="text-4xl md:text-6xl lg:text-7xl font-bold leading-[0.9] text-white mb-4 tracking-tighter">
             Chat with<br />
@@ -63,7 +56,7 @@ export function Hero() {
 
           <div className="flex items-center gap-6">
             <Link href="/auth/login" className="px-10 py-5 rounded-full bg-gradient-to-br from-[#f6b7f6] to-[#c88dc8] text-[#3c0d42] font-bold uppercase tracking-[0.2em] text-xs transition-all hover:scale-105 active:scale-95 shadow-2xl shadow-[#f6b7f6]/20">
-              Enter the Void
+              Chat with a strangr
             </Link>
           </div>
         </div>

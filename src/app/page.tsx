@@ -32,7 +32,6 @@ export default function HomePage() {
       <Hero />
       <Features />
       <HowItWorks />
-      <Testimonials />
       <ShyneShowcase />
       <Footer />
     </main>

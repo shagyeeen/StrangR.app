@@ -35,9 +35,9 @@ const FEATURES = [
 
 export function Features() {
   return (
-    <section className="py-32 px-6" id="features">
-      <div className="max-w-7xl mx-auto">
-        <div className="mb-16">
+    <section className="min-h-screen flex items-center justify-center py-20 px-6 pt-24" id="features">
+      <div className="max-w-7xl mx-auto w-full">
+        <div className="mb-12">
           <div className="section-eyebrow mb-4">Redefining Social Space</div>
           <p className="text-[#555] text-base">We stripped away the noise to focus on what matters: the conversation.</p>
         </div>

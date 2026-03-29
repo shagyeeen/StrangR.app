@@ -1,10 +1,10 @@
 'use client'
 
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Message } from '@/types'
 import { useChatContext } from '@/context/ChatContext'
 import { useAuthContext } from '@/context/AuthContext'
-import { Sparkles, XCircle, Check, CheckCheck, Clock, Zap } from 'lucide-react'
+import { Search, XCircle, Check, CheckCheck, Clock, Zap } from 'lucide-react'
 
 // Custom lightweight time formatters to avoid external dependencies
 function formatTime(date: Date | string): string {
@@ -43,11 +43,12 @@ interface MessageListProps {
   onSwipeLeft?: () => void  // skip
   onSwipeRight?: () => void // report
   onStartMatch?: () => void // start matching
+  onSwipeUpdate?: (x: number) => void // update swipe state in parent
   isPrivate?: boolean
 }
 
 
-export function MessageList({ onSwipeLeft, onSwipeRight, onStartMatch, isPrivate }: MessageListProps) {
+export function MessageList({ onSwipeLeft, onSwipeRight, onStartMatch, onSwipeUpdate, isPrivate }: MessageListProps) {
   const { chatState } = useChatContext()
   const { user } = useAuthContext()
   const { messages, isTyping, currentMatch, connectionStatus } = chatState
@@ -81,13 +82,25 @@ export function MessageList({ onSwipeLeft, onSwipeRight, onStartMatch, isPrivate
     touchStartY.current = e.touches[0].clientY
   }
 
+  const handleTouchMove = (e: React.TouchEvent) => {
+    const dx = e.touches[0].clientX - touchStartX.current
+    const dy = e.touches[0].clientY - touchStartY.current
+    
+    // Only track swipe if horizontal motion is dominant
+    if (Math.abs(dx) > Math.abs(dy)) {
+      onSwipeUpdate?.(dx)
+    }
+  }
+
   const handleTouchEnd = (e: React.TouchEvent) => {
     const dx = e.changedTouches[0].clientX - touchStartX.current
     const dy = e.changedTouches[0].clientY - touchStartY.current
-    if (Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > 50) { // Increased sensitivity to 50px
-      if (dx < 0) onSwipeLeft?.()   // swipe left → skip
-      else onSwipeRight?.()          // swipe right → report
+    
+    if (Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > 100) {
+      if (dx < 0) onSwipeLeft?.()
+      else onSwipeRight?.()
     }
+    onSwipeUpdate?.(0)
   }
 
   // Mouse drag support for desktop "swipe"
@@ -97,15 +110,27 @@ export function MessageList({ onSwipeLeft, onSwipeRight, onStartMatch, isPrivate
     isMouseDown.current = true
   }
 
+  const handleMouseMove = (e: React.MouseEvent) => {
+    if (!isMouseDown.current) return
+    const dx = e.clientX - touchStartX.current
+    const dy = e.clientY - touchStartY.current
+    
+    if (Math.abs(dx) > Math.abs(dy)) {
+      onSwipeUpdate?.(dx)
+    }
+  }
+
   const handleMouseUp = (e: React.MouseEvent) => {
     if (!isMouseDown.current) return
     isMouseDown.current = false
     const dx = e.clientX - touchStartX.current
     const dy = e.clientY - touchStartY.current
-    if (Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > 50) {
+    
+    if (Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > 100) {
       if (dx < 0) onSwipeLeft?.()
       else onSwipeRight?.()
     }
+    onSwipeUpdate?.(0)
   }
 
   // Matching / waiting state (Skip if this is a private chat)
@@ -132,7 +157,7 @@ export function MessageList({ onSwipeLeft, onSwipeRight, onStartMatch, isPrivate
              <div className="w-16 h-16 rounded-full bg-gradient-to-tr from-[#f6b7f6]/10 to-transparent animate-pulse-slow" />
              
              <div className="absolute inset-0 flex items-center justify-center">
-                <Sparkles size={28} className={`text-[#f6b7f6] ${isMatching ? 'animate-pulse' : 'opacity-40'}`} />
+                <Search size={28} className={`text-[#f6b7f6] ${isMatching ? 'animate-pulse' : 'opacity-40'}`} />
              </div>
           </div>
           
@@ -191,12 +216,12 @@ export function MessageList({ onSwipeLeft, onSwipeRight, onStartMatch, isPrivate
     return (
       <div className="flex-1 flex flex-col items-center justify-center gap-6 text-center px-12 bg-transparent relative">
         <div className="absolute inset-0 flex items-center justify-center pointer-events-none opacity-[0.03]">
-          <Sparkles size={400} className="text-[#f6b7f6] blur-sm animate-pulse-slow" />
+          <Search size={400} className="text-[#f6b7f6] blur-sm animate-pulse-slow" />
         </div>
         
         <div className="flex flex-col items-center gap-4">
           <div className="w-16 h-16 rounded-2xl bg-gradient-to-tr from-[#f6b7f6]/10 to-transparent border border-white/5 flex items-center justify-center shadow-2xl backdrop-blur-3xl animate-float mb-4">
-             <Sparkles size={28} className="text-[#f6b7f6]" />
+             <Search size={28} className="text-[#f6b7f6]" />
           </div>
           
           <span className="text-[10px] font-black uppercase tracking-[0.8em] text-[#f6b7f6]/60 italic font-serif">DISCOVER STRANGR</span>
@@ -224,11 +249,17 @@ export function MessageList({ onSwipeLeft, onSwipeRight, onStartMatch, isPrivate
   return (
     <div 
       ref={listRef}
-      className="flex-1 overflow-y-auto px-6 lg:px-12 pt-4 pb-32 space-y-4 relative scroll-smooth"
+      className="flex-1 overflow-y-auto px-6 lg:px-12 pt-4 pb-32 space-y-4 relative scroll-smooth bg-transparent select-none"
       onTouchStart={handleTouchStart}
+      onTouchMove={handleTouchMove}
       onTouchEnd={handleTouchEnd}
       onMouseDown={handleMouseDown}
+      onMouseMove={handleMouseMove}
       onMouseUp={handleMouseUp}
+      onMouseLeave={() => {
+        isMouseDown.current = false
+        onSwipeUpdate?.(0)
+      }}
     >
       <div className="relative z-10 flex flex-col gap-6">
         {messages.length > 0 && (

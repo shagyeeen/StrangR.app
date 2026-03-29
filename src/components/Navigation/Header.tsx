@@ -96,11 +96,8 @@ export function Header() {
             </div>
           ) : (
             <div className="flex items-center gap-6">
-              <Link href="/auth/login" className="text-[11px] font-bold uppercase tracking-widest text-[#555] hover:text-white transition-colors">
-                Login
-              </Link>
               <Link href="/auth/login" className="bg-[#f6b7f6] text-[#3c0d42] px-6 py-2 rounded-full font-bold text-[11px] uppercase tracking-[0.2em] transition-all hover:scale-105 active:scale-95 shadow-[0_0_20px_rgba(246,183,246,0.2)]">
-                Access Gateway
+                Login To StrangR
               </Link>
             </div>
           )}

@@ -59,29 +59,6 @@ export default function LoginPage() {
           Continue with Google
         </button>
 
-        {/* Divider */}
-        <div className="w-full max-w-sm flex items-center gap-4 my-8">
-          <div className="flex-1 h-px bg-[#1a1a1a]" />
-          <span className="text-[10px] text-[#333] uppercase tracking-widest">Or access the ether</span>
-          <div className="flex-1 h-px bg-[#1a1a1a]" />
-        </div>
-
-        {/* Secure indicator */}
-        <div className="flex flex-col items-center gap-3">
-          <button className="text-[#333] text-xs uppercase tracking-widest hover:text-[#555] transition-colors">
-            Enter via Secret Key
-          </button>
-          <div className="w-64 h-1 rounded-full bg-[#111] overflow-hidden">
-            <div className="h-full w-1/3 rounded-full bg-[#1a1a1a]" />
-          </div>
-          <div className="text-[10px] text-[#333] uppercase tracking-widest">Establishing Secure Connection...</div>
-          <div className="flex gap-1.5">
-            <div className="w-1.5 h-1.5 rounded-full bg-[#f6b7f6]" />
-            <div className="w-1.5 h-1.5 rounded-full bg-[#333]" />
-            <div className="w-1.5 h-1.5 rounded-full bg-[#333]" />
-          </div>
-        </div>
-
         {/* Privacy note */}
         <div className="flex items-center gap-2 mt-12 text-[#333]">
           <Shield className="w-3.5 h-3.5" />

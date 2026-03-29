@@ -371,13 +371,14 @@ export const setupSocketHandlers = (io: Server) => {
 
     // --- Moderation (Skip / Report) ---
     socket.on('skip_stranger', (data: { strangerId: string }) => {
-      // End chat session for the OTHER person
-      io.to(data.strangerId).emit('stranger_disconnected')
-      // We do NOT emit back to `socket` because the sender already skipped and is re-queuing
+      // End chat session for the OTHER person with a specific skip event
+      io.to(data.strangerId).emit('match_skipped_you')
+      // We do NOT emit back to `socket` because the sender already skipped and is re-queuing locally
     })
     
     socket.on('report_stranger', async (data: { strangerId: string, reason: string }) => {
       console.log(`User ${userId} reported ${data.strangerId} for ${data.reason}`)
+      
       // File report in DB
       await db.collection('reports').add({
         reporterId: userId,
@@ -386,14 +387,24 @@ export const setupSocketHandlers = (io: Server) => {
         timestamp: new Date()
       })
       
-      // End chat session for the OTHER person
-      io.to(data.strangerId).emit('stranger_disconnected')
+      // Get current report count for the reported user
+      const reportsSnapshot = await db.collection('reports')
+        .where('reportedId', '==', data.strangerId)
+        .get()
       
-      // Notify the user that the report was received
+      const reportCount = reportsSnapshot.size
+
+      // Notify the OTHER person they were reported and show status
+      io.to(data.strangerId).emit('you_were_reported', { 
+        count: reportCount,
+        max: 5
+      })
+      
+      // Notify the user who reported that it was received
       socket.emit('report_acknowledged')
 
-      // Simple ban logic: ban if > 3 reports
-      await checkBanThreshold(data.strangerId)
+      // Simple ban logic: ban if >= 5 reports (per user request n/5)
+      await checkBanThreshold(data.strangerId, reportCount)
     })
 
     socket.on('disconnect', async () => {
@@ -443,13 +454,9 @@ async function createFriendship(user1: string, user2: string) {
   return docRef.id
 }
 
-async function checkBanThreshold(uid: string) {
+async function checkBanThreshold(uid: string, reportCount: number) {
   try {
-    const reportsSnapshot = await db.collection('reports')
-      .where('reportedId', '==', uid)
-      .get()
-    
-    if (reportsSnapshot.size >= 3) {
+    if (reportCount >= 5) {
       // Action: 24 hour ban
       const expiry = new Date()
       expiry.setHours(expiry.getHours() + 24)
@@ -457,7 +464,7 @@ async function checkBanThreshold(uid: string) {
         banStatus: true,
         banExpiryTime: expiry
       })
-      console.log(`User ${uid} has been banned.`)
+      console.log(`User ${uid} has been banned due to ${reportCount} reports.`)
     }
   } catch (error) {
     console.error('Error checking ban status', error)

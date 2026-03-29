@@ -47,7 +47,7 @@ export function MessageInput() {
   }
 
   return (
-    <div className="px-6 py-8 bg-transparent relative z-20">
+    <div className="px-6 pt-4 pb-10 bg-transparent relative z-20">
       <div className="input-container-premium">
         
         <input

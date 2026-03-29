@@ -11,9 +11,9 @@ const STEPS = [
 
 export function HowItWorks() {
   return (
-    <section className="py-32 px-6 border-t border-[#111]" id="how-it-works">
-      <div className="max-w-7xl mx-auto">
-        <div className="text-center mb-20">
+    <section className="min-h-screen flex items-center justify-center py-20 px-6 pt-24 bg-black border-t border-[#111]" id="how-it-works">
+      <div className="max-w-7xl mx-auto w-full">
+        <div className="text-center mb-16">
           <h2 className="text-4xl md:text-5xl font-bold text-white mb-4">The Journey of Connection</h2>
           <div className="glow-divider w-24 mx-auto" />
         </div>

@@ -29,7 +29,12 @@ export function Footer({ isDashboard = false }: FooterProps) {
             <img src="/images/logo.png" alt="" className="w-4 h-4 object-contain" />
             <span className="font-bold text-white tracking-widest text-[10px] uppercase">STRANG<span className="text-[#f6b7f6]">R</span></span>
           </div>
-          <span className="text-[9px] text-[#444] uppercase tracking-widest mt-0.5 whitespace-nowrap">BUILT BY SHYNE</span>
+          <div className="flex items-center gap-1.5 mt-1 opacity-60">
+            <div className="w-5 h-5 rounded-md overflow-hidden flex items-center justify-center p-0.5">
+              <img src="/images/shyne.png" alt="" className="w-full h-full object-contain grayscale" />
+            </div>
+            <span className="text-[9px] text-[#444] font-bold uppercase tracking-widest whitespace-nowrap">BUILT BY SHYNE</span>
+          </div>
         </div>
 
         <nav className="flex items-center gap-6 md:gap-8">

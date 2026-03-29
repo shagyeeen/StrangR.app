@@ -135,6 +135,8 @@ export interface ChatState {
   friendshipId: string | null
   hasSentRequest: boolean
   hasReceivedRequest: boolean
+  partnerSkipNotification?: boolean
+  partnerReportNotification?: { count: number, max: number }
 }
 
 export interface AuthState {

@@ -11,6 +11,9 @@ const inter = Inter({ subsets: ["latin"], display: 'swap' })
 export const metadata: Metadata = {
   title: `${APP_META.name} | ${APP_META.tagline}`,
   description: APP_META.description,
+  icons: {
+    icon: '/images/logo.png',
+  },
 }
 
 export default function RootLayout({
